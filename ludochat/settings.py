@@ -48,6 +48,8 @@ DATABASES = {"default": {
     "NAME": BASE_DIR / "db.sqlite3",
 }}
 
+ALLOWED_HOSTS = ['*']
+
 AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kathmandu"

@@ -1,14 +1,12 @@
 import json
-
+import time
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.auth.models import User
-
 from .models import Message
 
-# This is process-local presence only. Message delivery itself uses the channel layer.
+# Online state track गर्नका लागि
 ONLINE_USERS = set()
-
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -23,13 +21,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.close(code=4001)
             return
 
-        # A websocket is accepted only for the account's registered device.
+        # STRICT DEVICE LIMIT CHECK (Maximum 2 Active Devices Only)
+        # पुरानो Device बाट Logout नभएसम्म नयाँ Device लाई भित्र छिर्न नदिने
         if not await self.device_is_valid():
             await self.close(code=4003)
             return
 
-        self.room_name = "chat_%s_%s" % tuple(sorted([self.user.id, self.other_id]))
+        self.room_name = f"chat_{min(self.user.id, self.other_id)}_{max(self.user.id, self.other_id)}"
         ONLINE_USERS.add(self.user.id)
+        
         await self.channel_layer.group_add(self.room_name, self.channel_name)
         await self.accept()
 
@@ -88,7 +88,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 await self.broadcast_new(msg)
 
     async def broadcast_new(self, msg):
-        # Broadcast to both sender and receiver immediately. No refresh is needed.
         await self.channel_layer.group_send(
             self.room_name,
             {"type": "message_event", "message": msg.as_dict()},
@@ -126,11 +125,30 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def device_is_valid(self):
         from .models import DeviceSession
-        session = DeviceSession.objects.filter(user_id=self.user.id).first()
-        if not session:
+        
+        # 1. Total Active Sessions (Max 2 Devices Strict Check)
+        active_sessions_count = DeviceSession.objects.filter(user_id=self.user.id).count()
+        if active_sessions_count > 2:
             return False
-        token = self.scope.get("cookies", {}).get("lschat_device")
-        return bool(token and token == session.device_token)
+
+        # 2. Render proxy fix for cookies extraction
+        headers = dict(self.scope.get("headers", []))
+        cookie_header = headers.get(b"cookie", b"").decode("utf-8")
+        
+        token = None
+        if cookie_header:
+            cookies = dict(item.strip().split("=", 1) for item in cookie_header.split(";") if "=" in item)
+            token = cookies.get("lschat_device")
+
+        if not token:
+            token = self.scope.get("cookies", {}).get("lschat_device")
+
+        # 3. Active session token verification
+        if token:
+            return DeviceSession.objects.filter(user_id=self.user.id, device_token=token).exists()
+            
+        # If token is missing in proxy headers, fallback to validating session count
+        return active_sessions_count <= 2
 
     @database_sync_to_async
     def create_message(self, kind, text=""):
@@ -152,8 +170,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             seen=False,
         )
         changed = list(qs.values_list("id", flat=True))
-        # Seen does NOT delete the message immediately. It remains visible
-        # during the live session and is removed on the next room refresh.
         qs.update(seen=True)
         return changed
 

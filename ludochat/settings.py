@@ -2,11 +2,22 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Security & Secret Keys
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-this-secret-key-before-production")
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".trycloudflare.com"]
-CSRF_TRUSTED_ORIGINS = ["https://*.trycloudflare.com"]
+# Allowed Hosts & CSRF Settings for Render & Cloudflare Tunnels
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.trycloudflare.com",
+    "https://*.onrender.com",
+]
+
+# Security headers for Cloudflare / Render proxy forwarding
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 
 INSTALLED_APPS = [
     "daphne",
@@ -30,50 +41,78 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "ludochat.urls"
+
 TEMPLATES = [{
     "BACKEND": "django.template.backends.django.DjangoTemplates",
     "DIRS": [BASE_DIR / "templates"],
     "APP_DIRS": True,
-    "OPTIONS": {"context_processors": [
-        "django.template.context_processors.request",
-        "django.contrib.auth.context_processors.auth",
-        "django.contrib.messages.context_processors.messages",
-    ]},
+    "OPTIONS": {
+        "context_processors": [
+            "django.template.context_processors.request",
+            "django.contrib.auth.context_processors.auth",
+            "django.contrib.messages.context_processors.messages",
+        ]
+    },
 }]
+
 WSGI_APPLICATION = "ludochat.wsgi.application"
 ASGI_APPLICATION = "ludochat.asgi.application"
 
-DATABASES = {"default": {
-    "ENGINE": "django.db.backends.sqlite3",
-    "NAME": BASE_DIR / "db.sqlite3",
-}}
-
-ALLOWED_HOSTS = ['*']
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
 AUTH_PASSWORD_VALIDATORS = []
+
+# Localization
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kathmandu"
 USE_I18N = True
 USE_TZ = True
+
+# Static & Media Files
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Auth Redirects
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/login/"
 
+# Channel Layer Configuration (WebSocket Connection Expiry: 10s)
 REDIS_URL = os.getenv("REDIS_URL", "").strip()
-if REDIS_URL:
-    CHANNEL_LAYERS = {"default": {"BACKEND": "channels_redis.core.RedisChannelLayer", "CONFIG": {"hosts": [REDIS_URL]}}}
-else:
-    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
-# Exactly two device slots maximum: one for each account.
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+                "expiry": 10,
+            },
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+            "CONFIG": {
+                "expiry": 10,
+            },
+        }
+    }
+
+# Session & Device Slot Management
 MAX_ACTIVE_SESSIONS = 2
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
-
 SESSION_COOKIE_NAME = 'render_lschat_sessionid'
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_HTTPONLY = True

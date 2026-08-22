@@ -74,3 +74,6 @@ else:
 # Exactly two device slots maximum: one for each account.
 MAX_ACTIVE_SESSIONS = 2
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
+
+SESSION_COOKIE_NAME = 'render_lschat_sessionid'
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'

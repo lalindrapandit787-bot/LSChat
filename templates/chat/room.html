@@ -1,0 +1,74 @@
+{% extends "chat/base.html" %}
+{% load static %}
+{% block content %}
+<div class="mobile-shell chat-shell">
+  <header class="chat-top">
+    <a class="back" href="{% url 'home' %}" aria-label="Back">‹</a>
+    <div class="avatar top-avatar">{{ other.username|first|upper }}<i id="statusDot" class="status-dot"></i></div>
+    <div class="person"><strong>{{ other.username }}</strong><small id="presenceText">Connecting...</small></div>
+    <div class="top-actions">🔒</div>
+  </header>
+
+  <main id="messages" class="messages">
+    {% for m in messages %}
+    <div class="msg-row {% if m.sender_id == request.user.id %}mine{% endif %}" data-id="{{ m.id }}">
+      <div class="bubble">
+        {% if m.message_type == "text" %}
+          <div class="msg-text">{{ m.text|linebreaksbr }}</div>
+        {% elif m.message_type == "image" %}
+          <a href="{{ m.attachment.url }}" target="_blank"><img class="msg-image" src="{{ m.attachment.url }}" loading="lazy"></a>
+        {% elif m.message_type == "video" %}
+          <video class="msg-video" controls preload="metadata" src="{{ m.attachment.url }}"></video>
+        {% elif m.message_type == "voice" or m.message_type == "audio" %}
+          <div class="voice"><span>🎤</span><audio controls preload="metadata" src="{{ m.attachment.url }}"></audio></div>
+        {% else %}
+          <a class="file-card" href="{{ m.attachment.url }}" target="_blank">📎 <span>{{ m.original_name|default:"File" }}</span></a>
+        {% endif %}
+        <div class="meta">{{ m.created_at|date:"H:i" }}
+          {% if m.sender_id == request.user.id %}
+            <span class="ticks {% if m.seen %}seen{% endif %}" data-status-id="{{ m.id }}">{% if m.seen %}✓✓{% elif m.delivered %}✓✓{% else %}✓{% endif %}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </main>
+
+  <div id="typing" class="typing">typing…</div>
+  <div id="connectionState" class="connection-state">Connecting…</div>
+
+  <div id="recordingBar" class="recording-bar">
+    <button type="button" id="cancelRecord" class="cancel-record">×</button>
+    <span>🔴 Recording</span><b id="recordTimer">0:00</b><small>Release to send</small>
+  </div>
+
+  <form id="composer" class="composer" enctype="multipart/form-data">
+    <button type="button" id="attachBtn" class="round-icon" title="Attach">＋</button>
+    <input id="fileInput" type="file" hidden accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt,.mp3,.m4a,.wav,.webm,.ogg">
+    <button type="button" id="cameraBtn" class="round-icon" title="Camera">📷</button>
+    <input id="cameraInput" type="file" hidden accept="image/*" capture="environment">
+    <button type="button" id="voiceBtn" class="round-icon voice-btn" title="Hold to record voice">🎤</button>
+    <input id="textInput" autocomplete="off" placeholder="Message">
+    <button type="submit" class="send" aria-label="Send">➤</button>
+  </form>
+
+  <div id="fileMenu" class="file-menu">
+    <button data-kind="image">🖼️ Photo</button>
+    <button data-kind="video">🎥 Video</button>
+    <button data-kind="audio">🎵 Audio</button>
+    <button data-kind="file">📎 Document</button>
+  </div>
+</div>
+
+<script>
+window.CHAT_CONFIG = {
+  userId: {{ request.user.id }},
+  otherId: {{ other.id }},
+  uploadUrl: "{% url 'upload_message' other.id %}",
+  stateUrl: "{% url 'message_state' other.id %}",
+  pingUrl: "{% url 'session_ping' %}",
+  csrf: "{{ csrf_token }}"
+};
+</script>
+<script src="{% static 'chat.js' %}"></script>
+{% endblock %}

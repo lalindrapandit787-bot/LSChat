@@ -1,0 +1,26 @@
+{% extends "chat/base.html" %}
+{% block content %}
+<div class="ludo-entry">
+  <div class="ludo-card">
+    <div class="ludo-dice">🎲</div>
+    <div class="ludo-title">LS</div>
+    <div class="ludo-chat-title">PRIVATE CHAT</div>
+    <p>Real-time private messaging • 2 devices maximum</p>
+    <form method="post" class="login-form">
+      {% csrf_token %}
+      <input name="username" placeholder="Username" autocomplete="username" required autofocus>
+      <div class="password-wrap">
+        <input id="passwordInput" name="password" type="password" placeholder="Password" autocomplete="current-password" required>
+        <button type="button" id="togglePassword" class="password-eye" aria-label="Show password" title="Show password">👁️</button>
+      </div>
+      {% if form.non_field_errors %}<div class="login-error">{{ form.non_field_errors|striptags }}</div>{% endif %}
+      <button>START CHAT</button>
+    </form>
+  </div>
+</div>
+<script>
+const p=document.getElementById('passwordInput');
+const b=document.getElementById('togglePassword');
+b.addEventListener('click',()=>{const show=p.type==='password';p.type=show?'text':'password';b.textContent=show?'🙈':'👁️';b.title=show?'Hide password':'Show password';b.setAttribute('aria-label',show?'Hide password':'Show password');});
+</script>
+{% endblock %}

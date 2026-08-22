@@ -1,0 +1,5 @@
+Django>=5.2,<6.0
+channels>=4.2,<5.0
+daphne>=4.2,<5.0
+channels-redis>=4.2,<5.0
+Pillow>=11.0,<13.0

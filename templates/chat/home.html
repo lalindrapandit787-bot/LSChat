@@ -1,0 +1,14 @@
+{% extends "chat/base.html" %}
+{% block content %}
+<div class="mobile-shell">
+<header class="home-header"><div><div class="mini-brand">LS <span>CHAT</span></div><div class="welcome">Private real-time conversations</div></div><a class="logout" href="{% url 'logout' %}">Logout</a></header>
+<div class="search"><span>⌕</span><input id="userSearch" placeholder="Search chats..."></div>
+<section class="chat-list"><div class="section-title">CHATS</div>
+{% for user in users %}
+<a class="contact" href="{% url 'chat_room' user.id %}" data-name="{{ user.username|lower }}">
+<div class="avatar">{{ user.username|first|upper }}<i class="status-dot {% if user.id in online_ids %}online{% endif %}"></i></div>
+<div class="contact-main"><strong>{{ user.username }}</strong><small>{% if user.id in online_ids %}Online{% else %}Offline{% endif %}</small></div><span class="chev">›</span></a>
+{% empty %}<div class="empty-card">No other users yet. Create the two chat users from <code>/admin/</code>.</div>{% endfor %}
+</section></div>
+<script>const s=document.getElementById("userSearch");s?.addEventListener("input",()=>{const q=s.value.toLowerCase();document.querySelectorAll(".contact").forEach(x=>x.style.display=x.dataset.name.includes(q)?"flex":"none")});</script>
+{% endblock %}

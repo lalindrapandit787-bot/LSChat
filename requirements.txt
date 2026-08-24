@@ -4,3 +4,6 @@ daphne>=4.2,<5.0
 channels-redis>=4.2,<5.0
 Pillow>=11.0,<13.0
 gunicorn
+dj-database-url
+psycopg[binary]
+whitenoise

@@ -8,8 +8,19 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-this-secret-key-before-produ
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 
 # Allowed Hosts & CSRF Settings for Render & Cloudflare Tunnels
-ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = [
+# ALLOWED_HOSTS = ['*']
+
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+]
+
+if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(os.getenv("RENDER_EXTERNAL_HOSTNAME"))
+
+
+
+CCSRF_TRUSTED_ORIGINS = [
     "https://*.trycloudflare.com",
     "https://*.onrender.com",
 ]
@@ -33,13 +44,14 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
 ROOT_URLCONF = "ludochat.urls"
 
 TEMPLATES = [{
@@ -58,11 +70,13 @@ TEMPLATES = [{
 WSGI_APPLICATION = "ludochat.wsgi.application"
 ASGI_APPLICATION = "ludochat.asgi.application"
 
+import dj_database_url
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = []
@@ -75,7 +89,17 @@ USE_TZ = True
 
 # Static & Media Files
 STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: lschat
+    runtime: python
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: daphne -b 0.0.0.0 -p $PORT ludochat.asgi:application
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "0"
+
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lschat-db
+          property: connectionString
+
+databases:
+  - name: lschat-db
+    databaseName: lschat
+    user: lschat

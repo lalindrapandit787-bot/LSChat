@@ -20,7 +20,7 @@ if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
 
 
 
-CCSRF_TRUSTED_ORIGINS = [
+CSRF_TRUSTED_ORIGINS = [
     "https://*.trycloudflare.com",
     "https://*.onrender.com",
 ]

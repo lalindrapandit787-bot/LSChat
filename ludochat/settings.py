@@ -1,15 +1,14 @@
 import os
 from pathlib import Path
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security & Secret Keys
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-this-secret-key-before-production")
-DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
+DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 
 # Allowed Hosts & CSRF Settings for Render & Cloudflare Tunnels
-# ALLOWED_HOSTS = ['*']
-
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
@@ -17,8 +16,6 @@ ALLOWED_HOSTS = [
 
 if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
     ALLOWED_HOSTS.append(os.getenv("RENDER_EXTERNAL_HOSTNAME"))
-
-
 
 CSRF_TRUSTED_ORIGINS = [
     "https://*.trycloudflare.com",
@@ -31,7 +28,7 @@ USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
 INSTALLED_APPS = [
-    'daphne',  # staticfiles र अन्य app भन्दा माथि राख्नुहोस्
+    'daphne',  # staticfiles र अन्य app भन्दा माथि हुनुपर्छ
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,9 +40,10 @@ INSTALLED_APPS = [
     'channels',
     'chat',  # तपाईंको app नाम
 ]
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Static files serving for Render
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -53,6 +51,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
 ROOT_URLCONF = "ludochat.urls"
 
 TEMPLATES = [{
@@ -71,8 +70,7 @@ TEMPLATES = [{
 WSGI_APPLICATION = "ludochat.wsgi.application"
 ASGI_APPLICATION = "ludochat.asgi.application"
 
-import dj_database_url
-
+# Database Configuration
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -88,19 +86,24 @@ TIME_ZONE = "Asia/Kathmandu"
 USE_I18N = True
 USE_TZ = True
 
-# Static & Media Files
+# Static Files (CSS, JavaScript, Images) Setup
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# STORAGES = {
-#     "default": {
-#         "BACKEND": "django.core.files.storage.FileSystemStorage",
-#     },
-#     "staticfiles": {
-#         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-#     },
-# }
+STATICFILES_DIRS = []
+if (BASE_DIR / "static").exists():
+    STATICFILES_DIRS.append(BASE_DIR / "static")
+
+# Django 4.2+ Compatible Storage Settings
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -142,14 +145,9 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_HTTPONLY = True
 
-
-
-
-
+# Cloudinary Configuration
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'dxgemaqq',
     'API_KEY': '678431561825283',
     'API_SECRET': 'PW47GOeThcK6iyK2VSzdMSLn0Cc'
 }
-
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

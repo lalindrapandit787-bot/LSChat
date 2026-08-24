@@ -33,6 +33,9 @@ def _set_device_cookie(response, token):
     )
     return response
 
+#YAHA DEKHI 
+from django.utils import timezone
+from datetime import timedelta
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -49,21 +52,25 @@ def login_view(request):
             form.add_error(None, "Only the two LSChat accounts can sign in.")
             return render(request, "chat/login.html", {"form": form})
 
+        # ३ मिनेटभन्दा पुरानो निष्क्रिय Session स्वत: सफा गर्ने (Stale cleanup)
+        cutoff = timezone.now() - timedelta(minutes=3)
+        DeviceSession.objects.filter(user=user, last_seen__lt=cutoff).delete()
+
         own = DeviceSession.objects.filter(user=user).first()
 
-        # Re-login from the already registered device is allowed.
+        # १. पुरानै डिभाइसबाट re-login गर्न पाइने
         if own and device_cookie == own.device_token:
             login(request, user)
             own.session_key = request.session.session_key or ""
             own.save(update_fields=["session_key", "last_seen"])
             return _set_device_cookie(redirect("home"), own.device_token)
 
-        # One device per account. Lalindar and Sandhiya can be active together.
+        # २. अर्को डिभाइसमा active छ भने
         if own:
-            form.add_error(None, "This account is already active on another device. Logout there first.")
+            form.add_error(None, "This account is active elsewhere. Logout there or wait 3 mins.")
             return render(request, "chat/login.html", {"form": form})
 
-        # No third account/device slot.
+        # ३. Maximum active session check
         if DeviceSession.objects.count() >= MAX_DEVICES:
             form.add_error(None, "Both LSChat device slots are already in use.")
             return render(request, "chat/login.html", {"form": form})
@@ -83,12 +90,71 @@ def login_view(request):
 
 @login_required
 def logout_view(request):
-    token = _device_token(request)
-    DeviceSession.objects.filter(user=request.user, device_token=token).delete()
+    # लगआउट गर्दा User को सबै DeviceSession तुरुन्तै मेटिदिने
+    DeviceSession.objects.filter(user=request.user).delete()
     logout(request)
     response = redirect("login")
     response.delete_cookie(DEVICE_COOKIE)
     return response
+
+# def login_view(request):
+#     if request.user.is_authenticated:
+#         return redirect("home")
+
+#     form = AuthenticationForm(request, data=request.POST or None)
+#     device_cookie = _device_token(request)
+
+#     if request.method == "POST" and form.is_valid():
+#         user = form.get_user()
+#         username = user.username.casefold()
+
+#         if username not in ALLOWED_USERS:
+#             form.add_error(None, "Only the two LSChat accounts can sign in.")
+#             return render(request, "chat/login.html", {"form": form})
+
+#         own = DeviceSession.objects.filter(user=user).first()
+
+#         # Re-login from the already registered device is allowed.
+#         if own and device_cookie == own.device_token:
+#             login(request, user)
+#             own.session_key = request.session.session_key or ""
+#             own.save(update_fields=["session_key", "last_seen"])
+#             return _set_device_cookie(redirect("home"), own.device_token)
+
+#         # One device per account. Lalindar and Sandhiya can be active together.
+#         if own:
+#             form.add_error(None, "This account is already active on another device. Logout there first.")
+#             return render(request, "chat/login.html", {"form": form})
+
+#         # No third account/device slot.
+#         if DeviceSession.objects.count() >= MAX_DEVICES:
+#             form.add_error(None, "Both LSChat device slots are already in use.")
+#             return render(request, "chat/login.html", {"form": form})
+
+#         token = get_random_string(80)
+#         with transaction.atomic():
+#             DeviceSession.objects.create(
+#                 user=user,
+#                 device_token=token,
+#                 session_key=request.session.session_key or "",
+#             )
+#         login(request, user)
+#         return _set_device_cookie(redirect("home"), token)
+
+#     return render(request, "chat/login.html", {"form": form})
+
+
+# @login_required
+# def logout_view(request):
+#     token = _device_token(request)
+#     DeviceSession.objects.filter(user=request.user, device_token=token).delete()
+#     logout(request)
+#     response = redirect("login")
+#     response.delete_cookie(DEVICE_COOKIE)
+#     return response
+
+#yaha sama
+
 
 
 @login_required

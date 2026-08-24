@@ -37,7 +37,12 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    'cloudinary_storage',
+    'django.contrib.staticfiles',
+    'cloudinary',
+
     "django.contrib.staticfiles",
+
     "channels",
     "chat",
 ]
@@ -140,3 +145,15 @@ SESSION_COOKIE_NAME = 'render_lschat_sessionid'
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_HTTPONLY = True
+
+
+
+
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dxgemaqq',
+    'API_KEY': '678431561825283',
+    'API_SECRET': 'PW47GOeThcK6iyK2VSzdMSLn0Cc'
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

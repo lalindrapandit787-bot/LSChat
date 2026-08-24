@@ -31,20 +31,18 @@ USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
 INSTALLED_APPS = [
-    "daphne",
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
+    'daphne',  # staticfiles र अन्य app भन्दा माथि राख्नुहोस्
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
     'cloudinary_storage',
     'django.contrib.staticfiles',
     'cloudinary',
-
-    "channels",
-    "chat",
+    'channels',
+    'chat',  # तपाईंको app नाम
 ]
-
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",

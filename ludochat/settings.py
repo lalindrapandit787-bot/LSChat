@@ -27,18 +27,35 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
+# INSTALLED_APPS = [
+#     'daphne',  # staticfiles र अन्य app भन्दा माथि हुनुपर्छ
+#     'django.contrib.admin',
+#     'django.contrib.auth',
+#     'django.contrib.contenttypes',
+#     'django.contrib.sessions',
+#     'django.contrib.messages',
+#     'cloudinary_storage',
+#     'django.contrib.staticfiles',
+#     'cloudinary',
+#     'channels',
+#     'chat',  # तपाईंको app नाम
+# ]
+
 INSTALLED_APPS = [
-    'daphne',  # staticfiles र अन्य app भन्दा माथि हुनुपर्छ
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'cloudinary_storage',
-    'django.contrib.staticfiles',
+    
+    # Cloudinary र Staticfiles को सही क्रम:
     'cloudinary',
+    'django.contrib.staticfiles',
+    'cloudinary_storage',
+    
     'channels',
-    'chat',  # तपाईंको app नाम
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -100,7 +117,8 @@ STORAGES = {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        # CompressedStaticFilesStorage ले कुनै फाइल मिसिए पनि साइटको CSS बिगार्दैन
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
